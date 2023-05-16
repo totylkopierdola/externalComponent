@@ -1,3 +1,4 @@
+import "https://totylkopierdola.github.io/externalComponent/dist/style.css";
 function Tf(N) {
   return N && N.__esModule && Object.prototype.hasOwnProperty.call(N, "default") ? N.default : N;
 }
@@ -6296,7 +6297,7 @@ function jf() {
     ] })
   ] });
 }
-function Uf(N) {
+function Af(N) {
   return Na.render(/* @__PURE__ */ ae(jf, {}), N), {
     unmount() {
       Na.unmountComponentAtNode(N);
@@ -6304,5 +6305,5 @@ function Uf(N) {
   };
 }
 export {
-  Uf as default
+  Af as default
 };
