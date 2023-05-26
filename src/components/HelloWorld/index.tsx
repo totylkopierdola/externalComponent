@@ -442,13 +442,16 @@ function App() {
                     <ul key={`member-${member.name}-${memberIndex}`}>
                       {member.type !== 'Relation' && (
                         <li key={`member-${member.name}-${memberIndex}`}>
-                          <input
-                            key={`input-${member.name}-${memberIndex}`}
-                            type="checkbox"
-                            checked={checkboxObjBuilder.isSelected(chosenRelationName, member.name)}
-                            onChange={() => handleMemberSelection(member.name)}
-                          />
-                          {member.name} | {memberGroup.name} |
+                          <span>
+                            <input
+                              key={`input-${member.name}-${memberIndex}`}
+                              type="checkbox"
+                              checked={checkboxObjBuilder.isSelected(chosenRelationName, member.name)}
+                              onChange={() => handleMemberSelection(member.name)}
+                            />
+                            {member.name}
+                            </span> 
+                            <span>{memberGroup.name}</span>
                           <span
                             onClick={() => {
                               if (member.type === 'Relation') {
