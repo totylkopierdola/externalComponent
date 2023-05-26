@@ -74,6 +74,9 @@ function App() {
 
   const [allAddedParents, setAllAddedParents] = useState([]);
 
+  const [searchInput, setSearchInput] = useState('');
+  const [filteredMembers, setFilteredMembers] = useState([]);
+
   useEffect(() => {
     async function fetchEntityDefinitions() {
       try {
@@ -120,6 +123,19 @@ function App() {
     // generateGraphQLQuery();
     generateGraphQLQuery2();
   }, [chosenSchema, checkboxObjBuilder, tabNumber]);
+
+  const handleSearchInputChange = (event) => {
+    const inputValue = event.target.value;
+    setSearchInput(inputValue);
+
+    // Filter the properties based on the input value
+    const filtered = schemaDefinition?.member_groups.flatMap((memberGroup) =>
+      memberGroup.members.filter((member) =>
+        member.name.toLowerCase().includes(inputValue.toLowerCase()),
+      ),
+    );
+    setFilteredMembers(filtered);
+  };
 
   const handleSchemaChange = (event) => {
     const selectedSchema = event.target.value;
@@ -201,25 +217,23 @@ function App() {
 
           // checkIsCardinalityManyToMany();
 
-          checkIsCardinalityManyToMany() 
-            // console.log('weszlo ManyToMany');
+          checkIsCardinalityManyToMany();
+          // console.log('weszlo ManyToMany');
 
-            if(isCardinalityManyToMany === true) {
-
-              return `${key} {
+          if (isCardinalityManyToMany === true) {
+            return `${key} {
                 results {
                   ${subFieldQuery}
                 }
               }`;
-            } else {
-              isCardinalityManyToMany = false;
-              return subFieldQuery
+          } else {
+            isCardinalityManyToMany = false;
+            return subFieldQuery
               ? `${key} {
               ${subFieldQuery}
             }`
               : `${key}`;
-            }
-            
+          }
         }
       });
 
@@ -266,10 +280,7 @@ function App() {
     setCheckboxObjBuilder(newCheckboxObjBuilder);
   };
 
-
   const schemaDefinition = entityDefinitions?.find((item) => item.name === chosenSchema);
-
-
 
   return (
     <>
@@ -283,15 +294,15 @@ function App() {
 
       <header>
         {chosenSchema ? <h1>Schema: {chosenSchema}</h1> : <h1>Choose Schema:</h1>}
-        <select onChange={handleSchemaChange}>
-          <option>Select a schema</option>
-          {entityDefinitions?.map((item) => (
-            <option key={`option-${item.name}`} value={item.name}>
-              {item?.name}
-            </option>
-          ))}
-        </select>
         <div className="buttons-section">
+          <select onChange={handleSchemaChange}>
+            <option>Select a schema</option>
+            {entityDefinitions?.map((item) => (
+              <option key={`option-${item.name}`} value={item.name}>
+                {item?.name}
+              </option>
+            ))}
+          </select>
           <button
             onClick={() => {
               generateGraphQLQuery2();
@@ -354,57 +365,140 @@ function App() {
           )}
           {/* PROPERTIES SECTION */}
           <div
-            style={{
-              maxHeight: 400,
-              opacity: tabNumber === 0 ? 1 : 0.4,
-              pointerEvents: tabNumber === 0 ? 'all' : 'none',
-            }}
-          >
-            {
-            schemaDefinition?.member_groups.map((memberGroup, groupIndex) => (
-              <div key={`group-${groupIndex}`}>
-                {memberGroup.members.map((member, memberIndex) => (
-                  <ul key={`member-${member.name}-${memberIndex}`}>
-                    <li className="triple-col" key={`member-${member.name}-${memberIndex}`}>
-                      <span style={{ display: 'flex', gap: 5 }}>
-                        <input
-                          key={`input-${member.name}-${memberIndex}`}
-                          type="checkbox"
-                          name={member.name}
-                          checked={checkboxObjBuilder.isSelected(chosenSchema, member.name)}
-                          onChange={handleCheckboxChange}
-                        />
-                        {member.name}
-                      </span>
-                      <span>{memberGroup.name}</span>
-                      <span
-                        onClick={() => {
-                          if (member.type === 'Relation') {
-                            setTabNumber(1);
-                            setChosenRelationName(member.name);
-                            setChosenRelationNameFromUrl(
-                              member.associated_entitydefinition.href.split('/').pop(),
-                            );
-                            setRelationPath([...relationPath, member.name]);
-                            checkboxObjBuilder.setCurrentRelation(member.name);
-                          }
-                        }}
-                        style={
-                          member.type === 'Relation'
-                            ? { cursor: 'pointer', fontWeight: 'bold' }
-                            : {}
-                        }
-                      >
-                        {member.type}
-                      </span>
-                      {/* cardinality type: {member.cardinality} */}
-                    </li>
-                  </ul>
-                ))}
-              </div>
-            ))
-            }
-          </div>
+  style={{
+    maxHeight: 400,
+    opacity: tabNumber === 0 ? 1 : 0.4,
+    pointerEvents: tabNumber === 0 ? 'all' : 'none',
+  }}
+>
+  <input
+    type="text"
+    value={searchInput}
+    onChange={handleSearchInputChange}
+    placeholder="Search properties..."
+  />
+
+  {searchInput === '' ? (
+    <div>
+      {schemaDefinition?.member_groups.map((memberGroup, groupIndex) => (
+        <div key={`group-${groupIndex}`}>
+          {memberGroup.members.map((member, memberIndex) => (
+            member.type !== 'Relation' && (
+              <ul key={`member-${member.name}-${memberIndex}`}>
+                <li className="triple-col" key={`member-${member.name}-${memberIndex}`}>
+                  <span style={{ display: 'flex', gap: 5 }}>
+                    <input
+                      key={`input-${member.name}-${memberIndex}`}
+                      type="checkbox"
+                      name={member.name}
+                      checked={checkboxObjBuilder.isSelected(chosenSchema, member.name)}
+                      onChange={handleCheckboxChange}
+                    />
+                    {member.name}
+                  </span>
+                  <span>{memberGroup.name}</span>
+                  <span
+                    onClick={() => {
+                      if (member.type === 'Relation') {
+                        setTabNumber(1);
+                        setChosenRelationName(member.name);
+                        setChosenRelationNameFromUrl(
+                          member.associated_entitydefinition.href.split('/').pop(),
+                        );
+                        setRelationPath([...relationPath, member.name]);
+                        checkboxObjBuilder.setCurrentRelation(member.name);
+                      }
+                    }}
+                    style={member.type === 'Relation' ? { cursor: 'pointer', fontWeight: 'bold' } : {}}
+                  >
+                    {member.type}
+                  </span>
+                </li>
+              </ul>
+            )
+          ))}
+        </div>
+      ))}
+      {schemaDefinition?.member_groups.map((memberGroup, groupIndex) => (
+        <div key={`group-${groupIndex}`}>
+          {memberGroup.members.map((member, memberIndex) => (
+            member.type === 'Relation' && (
+              <ul key={`member-${member.name}-${memberIndex}`}>
+                <li className="triple-col" key={`member-${member.name}-${memberIndex}`}>
+                  <span style={{ display: 'flex', gap: 5 }}>
+                    <input
+                      key={`input-${member.name}-${memberIndex}`}
+                      type="checkbox"
+                      name={member.name}
+                      checked={checkboxObjBuilder.isSelected(chosenSchema, member.name)}
+                      onChange={handleCheckboxChange}
+                    />
+                    {member.name}
+                  </span>
+                  <span>{memberGroup.name}</span>
+                  <span
+                    onClick={() => {
+                      if (member.type === 'Relation') {
+                        setTabNumber(1);
+                        setChosenRelationName(member.name);
+                        setChosenRelationNameFromUrl(
+                          member.associated_entitydefinition.href.split('/').pop(),
+                        );
+                        setRelationPath([...relationPath, member.name]);
+                        checkboxObjBuilder.setCurrentRelation(member.name);
+                      }
+                    }}
+                    style={member.type === 'Relation' ? { cursor: 'pointer', fontWeight: 'bold' } : {}}
+                  >
+                    {member.type}{member.cardinality && `: ${member.cardinality}`}
+                  </span>
+                </li>
+              </ul>
+            )
+          ))}
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div>
+      {filteredMembers.map((member, index) => (
+        <ul key={`filtered-member-${index}`}>
+          <li className="triple-col">
+            <span style={{ display: 'flex', gap: 5 }}>
+              <input
+                key={`input-${member.name}-${index}`}
+                type="checkbox"
+                name={member.name}
+                checked={checkboxObjBuilder.isSelected(chosenSchema, member.name)}
+                onChange={handleCheckboxChange}
+              />
+              {member.name}
+            </span>
+            <span>{member.memberGroup}</span>
+            <span
+              onClick={() => {
+                if (member.type === 'Relation') {
+                  setTabNumber(1);
+                  setChosenRelationName(member.name);
+                  setChosenRelationNameFromUrl(
+                    member.associated_entitydefinition.href.split('/').pop(),
+                  );
+                  setRelationPath([...relationPath, member.name]);
+                  checkboxObjBuilder.setCurrentRelation(member.name);
+                }
+              }}
+              style={member.type === 'Relation' ? { cursor: 'pointer', fontWeight: 'bold' } : {}}
+            >
+              {member.type}
+            </span>
+            {/* cardinality type: {member.cardinality} */}
+          </li>
+        </ul>
+      ))}
+    </div>
+  )}
+</div>
+
         </div>
 
         {/* RELATIONS SECTION */}
@@ -446,12 +540,15 @@ function App() {
                             <input
                               key={`input-${member.name}-${memberIndex}`}
                               type="checkbox"
-                              checked={checkboxObjBuilder.isSelected(chosenRelationName, member.name)}
+                              checked={checkboxObjBuilder.isSelected(
+                                chosenRelationName,
+                                member.name,
+                              )}
                               onChange={() => handleMemberSelection(member.name)}
                             />
                             {member.name}
-                            </span> 
-                            <span>{memberGroup.name}</span>
+                          </span>
+                          <span>{memberGroup.name}</span>
                           <span
                             onClick={() => {
                               if (member.type === 'Relation') {
@@ -488,8 +585,7 @@ function App() {
           value={generatedGraphQLQuery2}
           onChange={() => generateGraphQLQuery2()}
           spellCheck="false"
-        >
-        </textarea>
+        ></textarea>
         <button
           style={{
             position: 'absolute',
